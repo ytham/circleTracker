@@ -20,7 +20,7 @@ int mFrameNumber = 0;
 
 int main(int argc, char** argv) {
   // VideoCapture::VideoCapture capture(0);
-  VideoCapture::VideoCapture capture("eyeVideos/09073E216F5DF458.MOV");
+  VideoCapture::VideoCapture capture("eyeVideos/6E2646005DCDC02F.MOV");
   if (!capture.isOpened()) {
     return -1;
   }
@@ -42,8 +42,8 @@ int main(int argc, char** argv) {
   // Read camera video stream
   Mat frame;
   while (true) {
-    // Only capture every 30th frame
-    if (mFrameNumber % 30 != 0) {
+    // Only capture every 100th frame
+    if (mFrameNumber % 100 != 0) {
       mFrameNumber++;
       continue;
     }
@@ -103,7 +103,7 @@ void detectAndOutlineEyes(Mat frame) {
   transpose(frame_gray, frame_gray);
   flip(frame_gray, frame_gray, 0);
 
-  Rect crop = Rect(70, 70, 190, 150);
+  Rect crop = Rect(70, 60, 200, 160);
 
   Mat frame_gray_crop = frame_gray(crop);
 
@@ -111,6 +111,8 @@ void detectAndOutlineEyes(Mat frame) {
   Point eyeCenter = findEyeCenter(frame_gray_crop, Rect(0,0,frame_gray_crop.cols,frame_gray_crop.rows), "Debug");
 
   circle(frame_gray_crop, eyeCenter, 10, Scalar(255,0,0), 4, 8, 0);
+
+  cout << "XY:" << eyeCenter.x << "," << eyeCenter.y << endl;
 
   // // Apply CV - HAAR Cascade
   // vector<Rect> eyes;
@@ -244,7 +246,7 @@ Point findEyeCenter(Mat input, Rect eye, string debugWindow) {
   scaleToFastSize(eyeROIUnscaled, eyeROI);
   // Mat eyeROI = input(eye);
   // draw eye region
-  rectangle(input,eye,1234);
+  // rectangle(input,eye,1234);
   //-- Find the gradient
   Mat gradientX = computeMatXGradient(eyeROI);
   Mat gradientY = computeMatXGradient(eyeROI.t()).t();
@@ -288,7 +290,7 @@ Point findEyeCenter(Mat input, Rect eye, string debugWindow) {
   // Note: these loops are reversed from the way the paper does them
   // it evaluates every possible center for each gradient location instead of
   // every possible gradient location for every center.
-  printf("Eye Size: %ix%i\n",outSum.cols,outSum.rows);
+  // printf("Eye Size: %ix%i\n",outSum.cols,outSum.rows);
   for (int y = 0; y < weight.rows; ++y) {
     const double *Xr = gradientX.ptr<double>(y), *Yr = gradientY.ptr<double>(y);
     for (int x = 0; x < weight.cols; ++x) {
@@ -320,7 +322,7 @@ Point findEyeCenter(Mat input, Rect eye, string debugWindow) {
     }
     Mat mask = floodKillEdges(floodClone);
     //imshow(debugWindow + " Mask",mask);
-    imshow(debugWindow,out);
+    // imshow(debugWindow,out);
     // redo max
     minMaxLoc(out, NULL,&maxVal,NULL,&maxP,mask);
   }
