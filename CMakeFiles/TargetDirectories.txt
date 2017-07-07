@@ -1,0 +1,3 @@
+/Users/yujiang.tham/cv/circleTracker/CMakeFiles/rebuild_cache.dir
+/Users/yujiang.tham/cv/circleTracker/CMakeFiles/edit_cache.dir
+/Users/yujiang.tham/cv/circleTracker/CMakeFiles/CircleTracker.dir
