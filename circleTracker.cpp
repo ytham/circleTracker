@@ -6,7 +6,8 @@
 #include <queue>
 #include <iostream>
 #include <stdio.h>
-
+#include <ctime>
+#include <numeric>
 
 using namespace cv;
 using namespace std;
@@ -17,6 +18,8 @@ Point findEyeCenter(Mat input, Rect eye, string debugWindow);
 string cascade_type = "haarcascade_eye.xml";
 CascadeClassifier eye_cascade;
 int mFrameNumber = 0;
+int mDisplayedFrames = 0;
+vector<int> mFrameValues;
 
 int main(int argc, char** argv) {
   // VideoCapture::VideoCapture capture(0);
@@ -103,7 +106,7 @@ void detectAndOutlineEyes(Mat frame) {
   transpose(frame_gray, frame_gray);
   flip(frame_gray, frame_gray, 0);
 
-  Rect crop = Rect(70, 60, 200, 160);
+  Rect crop = Rect(80, 65, 190, 155);
 
   Mat frame_gray_crop = frame_gray(crop);
 
@@ -241,20 +244,25 @@ Point unscalePoint(Point p, Rect origSize) {
 }
 
 Point findEyeCenter(Mat input, Rect eye, string debugWindow) {
+  int t1 = clock();
   Mat eyeROIUnscaled = input(eye);
   Mat eyeROI;
   scaleToFastSize(eyeROIUnscaled, eyeROI);
+  int t2 = clock();
   // Mat eyeROI = input(eye);
   // draw eye region
   // rectangle(input,eye,1234);
   //-- Find the gradient
   Mat gradientX = computeMatXGradient(eyeROI);
   Mat gradientY = computeMatXGradient(eyeROI.t()).t();
+  int t3 = clock();
   //-- Normalize and threshold the gradient
   // compute all the magnitudes
   Mat mags = matrixMagnitude(gradientX, gradientY);
+  int t4 = clock();
   //compute the threshold
   double gradientThresh = computeDynamicThreshold(mags, kGradientThreshold);
+  int t5 = clock();
   //double gradientThresh = kGradientThreshold;
   //double gradientThresh = 0;
   //normalize
@@ -273,6 +281,7 @@ Point findEyeCenter(Mat input, Rect eye, string debugWindow) {
       }
     }
   }
+  int t6 = clock();
   // imshow(debugWindow,gradientX);
   //-- Create a blurred and inverted image for weighting
   Mat weight;
@@ -283,6 +292,7 @@ Point findEyeCenter(Mat input, Rect eye, string debugWindow) {
       row[x] = (255 - row[x]);
     }
   }
+  int t7 = clock();
   // imshow(debugWindow,weight);
   //-- Run the algorithm!
   Mat outSum = Mat::zeros(eyeROI.rows,eyeROI.cols,CV_64F);
@@ -301,6 +311,7 @@ Point findEyeCenter(Mat input, Rect eye, string debugWindow) {
       testPossibleCentersFormula(x, y, weight, gX, gY, outSum);
     }
   }
+  int t8 = clock();
   // scale all the values down, basically averaging them
   double numGradients = (weight.rows*weight.cols);
   Mat out;
@@ -310,6 +321,7 @@ Point findEyeCenter(Mat input, Rect eye, string debugWindow) {
   Point maxP;
   double maxVal;
   minMaxLoc(out, NULL,&maxVal,NULL,&maxP);
+  int t9 = clock();
   //-- Flood fill the edges
   if(kEnablePostProcess) {
     Mat floodClone;
@@ -326,5 +338,13 @@ Point findEyeCenter(Mat input, Rect eye, string debugWindow) {
     // redo max
     minMaxLoc(out, NULL,&maxVal,NULL,&maxP,mask);
   }
+  int t10 = clock();
+
+  mFrameValues.push_back(t8-t7);
+  int sum = accumulate(mFrameValues.begin(), mFrameValues.end(), 0);
+  int avg = sum/mFrameValues.size();
+
+  cout << "AVG:" << avg << " [f:" << mFrameValues.size() << "]" << "\tTD:" << t2-t1 << " " << t3-t2 << " " << t4-t3 << " " << t5-t4 <<
+          t6-t5 << " " << t7-t6 << " " << t8-t7 << " " << t9-t8 << " " << t10-t9 << " " << endl;
   return unscalePoint(maxP,eye);
 }
